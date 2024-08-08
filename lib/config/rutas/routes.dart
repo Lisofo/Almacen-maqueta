@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:maqueta_deposito/pages/dashboard.dart';
 import 'package:maqueta_deposito/pages/inventario.dart';
 import 'package:maqueta_deposito/pages/menu.dart';
 import 'package:maqueta_deposito/pages/pedidos.dart';
@@ -34,6 +35,7 @@ final menuNav = GlobalKey<NavigatorState>();
 final pickingKeyNav = GlobalKey<NavigatorState>();
 final inventarioNav = GlobalKey<NavigatorState>();
 final transferenciaNav = GlobalKey<NavigatorState>();
+final dashboardNav = GlobalKey<NavigatorState>();
 
 final rebuildNotifier = RebuildNotifier();
 
@@ -130,6 +132,15 @@ final router = GoRouter(
             GoRoute(
               path: '/transferencia',
               builder: (context, state) => const TransferenciaPage(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          navigatorKey: dashboardNav,
+          routes: [
+            GoRoute(
+              path: '/dashboard',
+              builder: (context, state) => const DashboardPage(),
             ),
           ],
         ),

@@ -23,6 +23,11 @@
                     "ruta": "/transferencia",
                     "icon": "calendar_month",
                     "texto": "Transferir"
+                },
+                {
+                    "ruta": "/dashboard",
+                    "icon": "calendar_month",
+                    "texto": "Dashboard"
                 }
             ]
         }
