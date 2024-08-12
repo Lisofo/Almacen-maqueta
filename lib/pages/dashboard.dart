@@ -1,3 +1,5 @@
+import 'dart:ffi';
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:maqueta_deposito/config/rutas/routes.dart';
@@ -12,7 +14,25 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   int touchedIndex = -1;
+  int totalDePedidos = 0;
+  int pedidosPendientes = 20;
+  int pedidosCompletados = 50;
+  int pedidosEnEspera = 10;
+
+  int numeroGuardado = 0;
+  String? selectedValue;
+  double percentCompletados = 0;
+  double percentPendientes = 0;
+  double percentEnEspera = 0;
   
+  
+  @override
+  void initState() {
+    totalDePedidos = pedidosCompletados + pedidosEnEspera + pedidosPendientes;
+    actualizarPorcentajes();
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
@@ -46,7 +66,9 @@ class _DashboardPageState extends State<DashboardPage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children:[
-                      const Text('Estado de los productos del dia:', style: TextStyle(fontSize: 25),),
+                      
+                      Text('$totalDePedidos Pedidos totales', style: const TextStyle(fontSize: 20),),
+                      const Text('Estado de los Pedidos del dia:', style: TextStyle(fontSize: 20),),  
                       Container(
                         height: 400,
                         child: PieChart(
@@ -72,32 +94,31 @@ class _DashboardPageState extends State<DashboardPage> {
                             centerSpaceRadius: 60,
                             sections: showingSections(),
                           ),
+                          
                         ),
                       ),
-                      const Indicator(
+                      Indicator(
                         color: Colors.blue,
-                        text: 'Pedidos Completados',
+                        text: '$pedidosCompletados Pedidos Completados',
                         isSquare: true,
                       ),
                       const SizedBox(
                         height: 4,
                       ),
-                      const Indicator(
+                      Indicator(
                         color: Colors.yellow,
-                        text: 'Pedidos Pendientes',
+                        text: '$pedidosPendientes Pedidos Pendientes',
                         isSquare: true,
                       ),
                       const SizedBox(
                         height: 4,
                       ),
-                      const Indicator(
+                      Indicator(
                         color: Colors.purple,
-                        text: 'Pedidos en espera de revision',
+                        text: '$pedidosEnEspera Pedidos en espera de revision',
                         isSquare: true,
                       ),
-                      const SizedBox(
-                        height: 4,
-                      ),
+                      
                       // const Indicator(
                       //   color: Colors.green,
                       //   text: 'Fourth',
@@ -105,6 +126,98 @@ class _DashboardPageState extends State<DashboardPage> {
                       // ),
                       const SizedBox(
                         height: 18,
+                      ),
+                      TextButton(
+                        onPressed: (){
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                actionsAlignment: MainAxisAlignment.spaceEvenly,
+                                surfaceTintColor: Colors.white,
+                                title: const Text('Confirmación'),
+                                content: const Text('Seleccione tipo de pedido y cantidad a agregar'),
+                                actions: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      DropdownButton<String>(
+                                        hint: const Text('Tipo de pedido'),
+                                        value: selectedValue,
+                                        onChanged: (String? newValue) {
+                                          setState(() {
+                                            selectedValue = newValue; // Update the selected value
+                                          });
+                                        },
+                                        items: <String>['Completado', 'Pendiente', 'Para Revision']
+                                            .map<DropdownMenuItem<String>>((String value) {
+                                          return DropdownMenuItem<String>(
+                                            value: value,
+                                            child: Text(value),
+                                          );
+                                        }).toList(),
+                                      ),
+                                      SizedBox(
+                                        width: 160,
+                                        child: TextField(
+                                          keyboardType: TextInputType.number,
+                                          decoration: const InputDecoration(
+                                            labelText: 'Ingrese cantidad',
+                                            border: OutlineInputBorder(),
+                                          ),
+                                          onChanged: (value) {
+                                            final intValue = int.tryParse(value);
+                                            if (intValue != null) {
+                                              setState(() {
+                                                numeroGuardado = intValue;
+                                              });
+                                            }
+                                          },
+                                        ),
+                                      )
+                                    ],
+                                  ),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.of(context).pop();
+                                        },
+                                        child: const Text('Cancelar'),
+                                      ),
+                                      TextButton(
+                                        onPressed: () {
+                                          setState(() {
+                                            switch (selectedValue) {
+                                              case 'Completado':
+                                                pedidosCompletados += numeroGuardado;
+                                              break;
+                                              case 'Pendiente':
+                                                pedidosPendientes += numeroGuardado;
+                                              break;
+                                              case 'Para Revision':
+                                                pedidosEnEspera += numeroGuardado;
+                                              break;
+                                              default:
+                                            }
+                                            totalDePedidos = pedidosCompletados + pedidosEnEspera + pedidosPendientes;
+                                            actualizarPorcentajes();
+                                          });
+                                          Navigator.of(context).pop();
+                                        },
+                                        child: const Text('Confirmar'),
+                                      ),
+                                    ],
+                                  ),
+                                  
+                                  
+                                ]
+                              );
+                            },
+                          );
+                        }, 
+                        child: const Text('Agregue Pedidos', style: TextStyle(fontSize: 20),)
                       ),
                     ],
                   ),
@@ -125,8 +238,8 @@ class _DashboardPageState extends State<DashboardPage> {
         case 0:
           return PieChartSectionData(
             color: Colors.blue,
-            value: 70,
-            title: '70%',
+            value: pedidosCompletados.toDouble(),
+            title: '$percentCompletados%',
             radius: radius,
             titleStyle: TextStyle(
               fontSize: fontSize,
@@ -138,8 +251,8 @@ class _DashboardPageState extends State<DashboardPage> {
         case 1:
           return PieChartSectionData(
             color: Colors.yellow,
-            value: 20,
-            title: '20%',
+            value: pedidosPendientes.toDouble(),
+            title: '$percentPendientes%',
             radius: radius,
             titleStyle: TextStyle(
               fontSize: fontSize,
@@ -151,8 +264,8 @@ class _DashboardPageState extends State<DashboardPage> {
         case 2:
           return PieChartSectionData(
             color: Colors.purple,
-            value: 10,
-            title: '10%',
+            value: pedidosEnEspera.toDouble(),
+            title: '$percentEnEspera%',
             radius: radius,
             titleStyle: TextStyle(
               fontSize: fontSize,
@@ -179,4 +292,11 @@ class _DashboardPageState extends State<DashboardPage> {
       }
     });
   }
+  
+  void actualizarPorcentajes() {
+    percentCompletados = double.parse((100 * pedidosCompletados / totalDePedidos).toStringAsFixed(1));
+    percentPendientes  = double.parse((100 * pedidosPendientes / totalDePedidos).toStringAsFixed(1));
+    percentEnEspera = double.parse((100 * pedidosEnEspera / totalDePedidos).toStringAsFixed(1));
+  }
+
 }
